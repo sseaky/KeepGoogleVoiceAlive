@@ -14,7 +14,7 @@ IFTTT需要接听电话，打开voice.google.com，进入设置，关闭 **来�
 
 ![](img/voice_screen.png)
 
-保持voice页面打开，另开窗口登陆 https://ifttt.com/home，查找 keep google voice active。
+保持voice页面打开，另开窗口登陆 https://ifttt.com/home,  查找 keep google voice active。
 
 ![](img/ifttt_app.png)
 
@@ -86,7 +86,7 @@ function KeepMeAlive() {
 
 ![](img/voice_server_label.png)
 
-2、进入https://script.google.com/home，新建项目 ReplyToClient，完成后手工运行一次，授权
+2、进入https://script.google.com/home, 新建项目 ReplyToClient，完成后手工运行一次，授权
 
 ```js
 function ReplyToClent() {
