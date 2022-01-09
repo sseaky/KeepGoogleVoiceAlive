@@ -42,7 +42,7 @@ IFTTT需要接听电话，打开voice.google.com，进入设置，关闭 **来�
 
 ![](img/voice_message.png)
 
-4、登陆 https://script.google.com/home，新建一个项目，点1重命名为KeepMeAlive；code可以自己设一个，目的是让server识别需要自动回复的消息，如果不需要server，这个空着也行；sendto是上一步中的地址
+4、登陆 https://script.google.com/home, 新建一个项目，点1重命名为KeepMeAlive；code可以自己设一个，目的是让server识别需要自动回复的消息，如果不需要server，这个空着也行；sendto是上一步中的地址
 
 ![](img/voice_client.png)
 
