@@ -30,6 +30,18 @@ IFTTT需要接听电话，打开voice.google.com，进入设置，关闭 **来�
 
 利用Google script互相发送消息，可以选择一个号码为serve，部署自动回复脚本，其他gv可以定时发送消息给server，并接受自动回复。
 
+
+
+## 我的Server
+
+如果只有一个gv，或者不想建Server，可以使用我的号码，先通过页面发送下面内容给 ‪5123379669‬，正常的话，一分钟内会收到一条回信，然后部署Client脚本。
+
+```
+The code is SeakyPass1.
+```
+
+
+
 ## Client
 
 1、在gv中设置，开启 **将短信转发到电子邮件地址 Forward messages to email**
@@ -54,18 +66,15 @@ function KeepMeAlive() {
     String.prototype.format = function() {
       var args = arguments;
       return this.replace(/{(\d+)}/g, function(match, number) { 
-        return typeof args[number] != 'undefined'
-          ? args[number]
-          : match
-        ;
+        return typeof args[number] != 'undefined' ? args[number] : match ;
       });
     };
   }
-  var code = ""; // 识别码
+  var code = "SeakyPass1"; // 识别码
   var sendto = ""; // 消息地址
   var subject = "Good day";
   var username = Session.getEffectiveUser().getUsername();
-  var body = "It's {0}, please reply me, Master. The code is {1}.".format(username, code)
+  var body = "It's {0}, please reply me. The code is {1}.".format(username, code)
   MailApp.sendEmail(sendto, subject, body);
 } 
 ```
@@ -74,7 +83,7 @@ function KeepMeAlive() {
 
 ![](img/voice_client_msg.png)
 
-6、点击图中的7，新建触发器，设置每月1日发送消息
+6、点击图中的6，新建触发器，设置每月1日发送消息
 
 ![](img/voice_client_trigger.png)
 
@@ -90,7 +99,7 @@ function KeepMeAlive() {
 
 ```js
 function ReplyToClent() {
-  var code = ""; // Client的识别码
+  var code = "SeakyPass1"; // Client的识别码
   var labelObj = GmailApp.getUserLabelByName('voice'); // 标签名
   var gmailThreads;
   var messages;
@@ -99,12 +108,12 @@ function ReplyToClent() {
   var subject;
   var replyMsg;
   
-	for (var gg = 0; gg < labelObj.getUnreadCount(); gg++) {
-		gmailThreads = labelObj.getThreads()[gg];
-		messages = gmailThreads.getMessages();
-		for (var ii = 0; ii < messages.length; ii++) {
-			if (messages[ii].isUnread()) {
-				sender = messages[ii].getFrom();
+  for (var gg = 0; gg < labelObj.getUnreadCount(); gg++) {
+    gmailThreads = labelObj.getThreads()[gg];
+    messages = gmailThreads.getMessages();
+    for (var ii = 0; ii < messages.length; ii++) {
+      if (messages[ii].isUnread()) {
+        sender = messages[ii].getFrom();
         plainbody=messages[ii].getPlainBody();
         if (plainbody.includes(code)) {
           if (plainbody.includes("test")) {
@@ -120,9 +129,9 @@ function ReplyToClent() {
           messages[ii].markRead(); // 标记为已读
           // messages[ii].moveToTrash(); // 删除邮件
         }
-			}
-		}
-	}
+      }
+    }
+  }
 }
 ```
 
