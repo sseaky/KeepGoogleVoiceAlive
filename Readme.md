@@ -1,147 +1,96 @@
-# About
+# Google Voice Auto-Keepalive (GVA) 🚀
 
-要保持google voice活跃状态，有两种方法:
+一套基于 **Google Apps Script (GAS)** 的轻量化双向保活系统。通过模拟真实的短信交互逻辑，并集成飞书机器人推送，确保您的 Google Voice 号码永久处于活跃状态。
 
-1、IFTTT
+## 🌟 核心特性
 
-2、Google script
+- **角色互斥逻辑**：区分 `Client`（发起端）与 `Server`（响应端），通过 `REQ-ID` 与 `RES-ID` 指纹防止死循环。
+- **智能寻址**：自动解析 GV 动态加密邮件网关，无需手动配置复杂的虚拟邮箱地址。
+- **安全机制**：内置 32 组随机口令验证 + 飞书关键词校验。
+- **自然语料**：100 条均衡分布的中英文语料库（50 中 / 50 英），模拟人类真实对话。
+- **交互卡片**：飞书实时推送卡片通知，包含发起者身份、匹配口令及原文预览。
 
+------
 
+## 🌬️ 破冰步骤：建立首次连接 (Critical)
 
-# IFTTT
+由于 GV 的邮件网关地址是动态生成的，脚本在首次运行时，Gmail 中没有历史记录，无法“寻址”。**必须手动执行破冰。**
 
-IFTTT需要接听电话，打开voice.google.com，进入设置，关闭 **来电过滤 Screen calls**，不关的话可能会接不到电话
+### 场景 A：从 Client 端发起 (最推荐)
 
-![](img/voice_screen.png)
+1. **手动发短信**：登录 **Client 账号** 的 GV App 或网页，向 **Server 账号** 号码发送：
 
-保持voice页面打开，另开窗口登陆 https://ifttt.com/home,  查找 keep google voice active。
+   > `It's 99.Init REQ-ID:START Code:V9pX7mN2 破冰测试`
 
-![](img/ifttt_app.png)
+2. **Server 处理**：在 GAS 编辑器中手动点击运行一次 `KeepMeAliveServer` 函数。
 
+   - **预期结果**：Server 会识别该短信并自动回复。此时飞书应弹出蓝色通知卡片。
 
+3. **Client 激活**：在 GAS 中手动运行一次 `KeepMeAliveClient`。
 
-填入号码，+1xxxxxxxxxx，确定后，voice页面会振铃，来电是英文的，会告知4个数字，重复两遍。填入验证数字后，选择日期，开通成功。
+   - **预期结果**：Client 搜到 Server 的回复（带 `RES-ID`），成功提取网关地址，并发出第一封正式请求。
 
-![](img/ifttt_connected.png)
+### 场景 B：从 Server 端发起
 
+1. **手动发短信**：登录 **Server 账号** 的 GV，向 **Client 账号** 号码发送：
 
+   > `Hi 99.User, status recorded: 初始化链路 (Code:V9pX7mN2) RES-ID:INIT`
 
-# Google Script
+2. **Client 激活**：手动运行 `KeepMeAliveClient`。
 
-利用Google script互相发送消息，可以选择一个号码为serve，部署自动回复脚本，其他gv可以定时发送消息给server，并接受自动回复。
+   - **预期结果**：脚本通过 `RES-ID` 抓取到发件人地址，并开始周期性发信。
 
+------
 
+## 🛠️ 部署指南
 
-## 我的Server
+### 1. 飞书机器人配置
 
-如果只有一个gv，或者不想建Server，可以使用我的号码，先通过页面发送下面内容给 ‪5123379669‬，正常的话，一分钟内会收到一条回信，然后部署Client脚本。
+- 在飞书群添加“自定义机器人”。
+- **安全设置**：勾选“自定义关键词”，添加：`KeepMeAliveServer`。
+- **关闭**“签名校验”与“IP白名单”。
+- 复制 Webhook 地址。
 
-```
-The code is SeakyPass1.
-```
+### 2. 脚本部署
 
+1. 进入 [GAS 控制台](https://script.google.com/)，创建两个项目：`GV_Client` 和 `GV_Server`。
+2. 将对应的 `client.js` 和 `server.js` 粘贴进去。
+3. 在 `server.js` 配置区填入您的飞书 Webhook 地址。
+4. **手动授权**：点击“运行”，根据 Google 提示完成所有权限授权（点击“高级” -> “转到项目”）。
 
+### 3. 设置触发器 (Triggers)
 
-## Client
+点击 GAS 左侧时钟图标：
 
-1、在gv中设置，开启 **将短信转发到电子邮件地址 Forward messages to email**
+- **Server**: 每小时执行一次 `KeepMeAliveServer`。
+- **Client**: 每 7 天（或按需）执行一次 `KeepMeAliveClient`。
 
-![](img/voice_forward.png)
+------
 
-2、server从页面发送一条消息给client
+## 📝 角色指纹说明
 
-3、进入client的邮箱，会看到一条消息，记录下这个发件人地址
+| **标签** | **含义** | **搜索逻辑**                                                 |
+| -------- | -------- | ------------------------------------------------------------ |
+| `REQ-ID` | 请求标识 | **Server** 搜此标签进行回复；**Client** 搜地址时排除此标签。 |
+| `RES-ID` | 响应标识 | **Client** 靠此标签提取网关地址；**Server** 搜请求时排除此标签。 |
 
-![](img/voice_message.png)
+------
 
-4、登陆 https://script.google.com/home, 新建一个项目，点1重命名为KeepMeAlive；code可以自己设一个，目的是让server识别需要自动回复的消息，如果不需要server，这个空着也行；sendto是上一步中的地址
+## 📊 日志参考
 
-![](img/voice_client.png)
+通过 GAS 的“执行记录”可观察详细流程：
 
-```js
-// client
-function KeepMeAlive() {
-  // First, checks if it isn't implemented yet.
-  if (!String.prototype.format) {
-    String.prototype.format = function() {
-      var args = arguments;
-      return this.replace(/{(\d+)}/g, function(match, number) { 
-        return typeof args[number] != 'undefined' ? args[number] : match ;
-      });
-    };
-  }
-  var code = "SeakyPass1"; // 识别码
-  var sendto = ""; // 消息地址
-  var subject = "Good day";
-  var username = Session.getEffectiveUser().getUsername();
-  var body = "It's {0}, please reply me. The code is {1}.".format(username, code)
-  MailApp.sendEmail(sendto, subject, body);
-} 
-```
+- `[Client寻址] 成功定位地址: 1234.5678.abcd@txt.voice.google.com`
+- `[Server成功] 处理请求: 99.UserA | 地址: 5678.1234.dcba@txt.voice.google.com`
+- `[飞书日志] 响应内容: {"code":0,"msg":"success"}`
 
-5、点击运行，会提示权限，确认允许后，执行成功server端就收到到消息了
+## 服务侧增加飞书通知功能
 
-![](img/voice_client_msg.png)
+![](./img/feisu.png)
 
-6、点击图中的6，新建触发器，设置每月1日发送消息
+## 我的服务器
 
-![](img/voice_client_trigger.png)
+如果没有Server，可以使用我的GV，通过网页或app向 ‪(512) 337-9669‬ 发送，一小时自动回复一次。
+   > `It's 99.Init REQ-ID:START Code:V9pX7mN2 破冰测试`
 
-
-
-## Server
-
-1、进入Gmail邮箱，添加过滤器，将 @txt.voice.google.com 的邮件标记过voice
-
-![](img/voice_server_label.png)
-
-2、进入https://script.google.com/home, 新建项目 ReplyToClient，完成后手工运行一次，授权
-
-```js
-function ReplyToClent() {
-  var code = "SeakyPass1"; // Client的识别码
-  var labelObj = GmailApp.getUserLabelByName('voice'); // 标签名
-  var gmailThreads;
-  var messages;
-  var sender;
-  var plainbody;
-  var subject;
-  var replyMsg;
-  
-  for (var gg = 0; gg < labelObj.getUnreadCount(); gg++) {
-    gmailThreads = labelObj.getThreads()[gg];
-    messages = gmailThreads.getMessages();
-    for (var ii = 0; ii < messages.length; ii++) {
-      if (messages[ii].isUnread()) {
-        sender = messages[ii].getFrom();
-        plainbody=messages[ii].getPlainBody();
-        if (plainbody.includes(code)) {
-          if (plainbody.includes("test")) {
-            replyMsg = "Test done. code: " + code;
-          }
-          else {
-            m = plainbody.match(/It's (.+), please/i);
-            name = m?m[1]:""; // 提取Client消息中的用户名
-            replyMsg = "Hi "+ name + ", your request has been recorded and it will be coped ASAP.";
-          }
-          subject = "Auto Reply";
-          MailApp.sendEmail(sender, subject, replyMsg); // 回复邮件
-          messages[ii].markRead(); // 标记为已读
-          // messages[ii].moveToTrash(); // 删除邮件
-        }
-      }
-    }
-  }
-}
-```
-
-3、添加触发器，每分钟执行一次，完工
-
-![](img/voice_server_reply.png)
-
-### 
-
-
-
-
-
+Client收到回复后，后续脚本会自动获取网关地址自动发送，也可以在GAS控制台中手动执行一次脚本测试。
